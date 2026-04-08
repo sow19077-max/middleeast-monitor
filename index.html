@@ -5,12 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="referrer" content="no-referrer">
 <title>Middle East // War Monitor</title>
+<link rel="preconnect" href="https://api.allorigins.win">
+<link rel="preconnect" href="https://api.reliefweb.int">
+<link rel="dns-prefetch" href="https://s3.tradingview.com">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js" defer></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -48,6 +51,7 @@
     content: '';
     position: fixed;
     inset: 0;
+    will-change: transform;
     background: repeating-linear-gradient(
       0deg,
       transparent,
@@ -4118,9 +4122,9 @@
         <div class="bf-section-title">Drone Attack Tracker</div>
         <div class="bf-section-sub">AUTO-DETECTED FROM LIVE NEWS FEED — UPDATES EVERY REFRESH CYCLE</div>
       </div>
-      <button class="bf-collapse-btn" data-target="drone-body">COLLAPSE ▲</button>
+      <button class="bf-collapse-btn" data-target="drone-body">EXPAND ▼</button>
     </div>
-    <div class="bf-section-body" id="drone-body">
+    <div class="bf-section-body collapsed" id="drone-body">
       <div id="drone-table-wrap">
         <table id="drone-table">
           <thead>
@@ -4145,9 +4149,9 @@
         <div class="bf-section-title">Market Radar</div>
         <div class="bf-section-sub">GOLD · OIL · BITCOIN — LIVE PRICES</div>
       </div>
-      <button class="bf-collapse-btn" data-target="market-body">COLLAPSE ▲</button>
+      <button class="bf-collapse-btn" data-target="market-body">EXPAND ▼</button>
     </div>
-    <div class="bf-section-body" id="market-body">
+    <div class="bf-section-body collapsed" id="market-body">
       <div class="mr-grid">
 
         <!-- Gold -->
@@ -4160,8 +4164,8 @@
             <div class="mr-fallback">RE-CONNECTING…</div>
             <div class="tradingview-widget-container">
               <div class="tradingview-widget-container__widget"></div>
-              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
-              {"symbol":"OANDA:XAUUSD","width":"100%","height":"100%","locale":"en","dateRange":"1D","colorTheme":"dark","isTransparent":true,"autosize":true,"chartOnly":false,"noTimeScale":false}
+              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>
+              {"symbols":[["Gold","OANDA:XAUUSD|1D"]],"width":"100%","height":"100%","locale":"en","colorTheme":"dark","isTransparent":true,"showVolume":false,"showMA":false,"hideDateRanges":false,"hideMarketStatus":false,"hideSymbolLogo":false,"scalePosition":"right","scaleMode":"Normal","noTimeScale":false,"valuesTracking":"1","changeMode":"price-and-percent","chartType":"area","lineWidth":2,"lineType":0,"dateRanges":["1d|1","1m|30","3m|60","12m|1D","60m|1W","all|1M"]}
               </script>
             </div>
           </div>
@@ -4177,8 +4181,8 @@
             <div class="mr-fallback">RE-CONNECTING…</div>
             <div class="tradingview-widget-container">
               <div class="tradingview-widget-container__widget"></div>
-              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
-              {"symbol":"TVC:USOIL","width":"100%","height":"100%","locale":"en","dateRange":"1D","colorTheme":"dark","isTransparent":true,"autosize":true,"chartOnly":false,"noTimeScale":false}
+              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>
+              {"symbols":[["Crude Oil","TVC:USOIL|1D"]],"width":"100%","height":"100%","locale":"en","colorTheme":"dark","isTransparent":true,"showVolume":false,"showMA":false,"hideDateRanges":false,"hideMarketStatus":false,"hideSymbolLogo":false,"scalePosition":"right","scaleMode":"Normal","noTimeScale":false,"valuesTracking":"1","changeMode":"price-and-percent","chartType":"area","lineWidth":2,"lineType":0,"dateRanges":["1d|1","1m|30","3m|60","12m|1D","60m|1W","all|1M"]}
               </script>
             </div>
           </div>
@@ -4194,8 +4198,8 @@
             <div class="mr-fallback">RE-CONNECTING…</div>
             <div class="tradingview-widget-container">
               <div class="tradingview-widget-container__widget"></div>
-              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
-              {"symbol":"COINBASE:BTCUSD","width":"100%","height":"100%","locale":"en","dateRange":"1D","colorTheme":"dark","isTransparent":true,"autosize":true,"chartOnly":false,"noTimeScale":false}
+              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>
+              {"symbols":[["Bitcoin","COINBASE:BTCUSD|1D"]],"width":"100%","height":"100%","locale":"en","colorTheme":"dark","isTransparent":true,"showVolume":false,"showMA":false,"hideDateRanges":false,"hideMarketStatus":false,"hideSymbolLogo":false,"scalePosition":"right","scaleMode":"Normal","noTimeScale":false,"valuesTracking":"1","changeMode":"price-and-percent","chartType":"area","lineWidth":2,"lineType":0,"dateRanges":["1d|1","1m|30","3m|60","12m|1D","60m|1W","all|1M"]}
               </script>
             </div>
           </div>
@@ -4349,7 +4353,7 @@
     </div>
     <div class="bf-section-body" id="unhcr-body">
       <div class="unhcr-grid" id="unhcr-grid">
-        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);padding:14px;grid-column:1/-1">Fetching UNHCR data…</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);padding:14px;grid-column:1/-1">Loading UNHCR data…</div>
       </div>
       <div class="src-footer" id="unhcr-footer"></div>
     </div>
@@ -4381,9 +4385,9 @@
         <div class="bf-section-title">Arms Transfers</div>
         <div class="bf-section-sub">SIPRI 2024 DATA — VERIFIED TRANSFERS TO CONFLICT ACTORS</div>
       </div>
-      <button class="bf-collapse-btn" data-target="sipri-body">COLLAPSE ▲</button>
+      <button class="bf-collapse-btn" data-target="sipri-body">EXPAND ▼</button>
     </div>
-    <div class="bf-section-body" id="sipri-body">
+    <div class="bf-section-body collapsed" id="sipri-body">
       <div class="sipri-scroll">
         <table class="sipri-tbl">
           <thead>
@@ -5107,7 +5111,7 @@ function scanDeathsFromNews() {
 // ── DISPLACED: UNHCR API (every 6 hours) ──────────────────────
 async function refreshDisplaced() {
   try {
-    const url = 'https://api.unhcr.org/population/v1/population/?limit=20&dataset=population&displayType=totals&countries=PSE,LBN,SYR,YEM,IRQ,AFG&yearFrom=2024&yearTo=2024';
+    const url = 'https://data.unhcr.org/api/population/?limit=20&dataset=population&displayType=totals&countries=PSE,LBN,SYR,YEM,IRQ,AFG&yearFrom=2024&yearTo=2024';
     const res  = await fetch(url, { signal: AbortSignal.timeout(15000) });
     const json = await res.json();
 
@@ -5159,11 +5163,11 @@ function updateActiveFronts() {
 
 // ── SIMULATED SEED VALUES (shown immediately, replaced by live data when available) ──
 const STAT_SEEDS = {
-  deaths:     { base: 46913,  rate: [1, 4],   badge: 'ESTIMATED',    badgeClass: 'orange' },
-  injured:    { base: 110820, rate: [2, 7],   badge: 'ESTIMATED',    badgeClass: 'orange' },
+  deaths:     { base: 54200,  rate: [1, 4],   badge: 'ESTIMATED',    badgeClass: 'orange' },
+  injured:    { base: 128500, rate: [2, 7],   badge: 'ESTIMATED',    badgeClass: 'orange' },
   displaced:  { base: 2300000,rate: [80,300], badge: 'ESTIMATED',    badgeClass: 'orange' },
-  children:   { base: 17400,  rate: [0, 2],   badge: 'ESTIMATED',    badgeClass: 'orange' },
-  aidworkers: { base: 340,    rate: [0, 1],   badge: 'ESTIMATED',    badgeClass: 'orange' },
+  children:   { base: 19800,  rate: [0, 2],   badge: 'ESTIMATED',    badgeClass: 'orange' },
+  aidworkers: { base: 385,    rate: [0, 1],   badge: 'ESTIMATED',    badgeClass: 'orange' },
   fronts:     { base: 7,      rate: [0, 0],   badge: 'SIMULATED',    badgeClass: 'dim' },
 };
 
@@ -6286,7 +6290,7 @@ const FIGURES = [
   {
     name: 'Ali Khamenei',
     role: 'Supreme Leader — Iran',
-    status: 'eliminated',
+    status: 'inpower',
     flag: '🇮🇷',
     img: 'https://upload.wikimedia.org/wikipedia/commons/e/e2/Ali_Khamenei_Nowruz_message_official_portrait_1397_02.jpg',
   },
@@ -7309,8 +7313,8 @@ function renderACLEDData(el, events, isStatic) {
 // ── UNHCR DISPLACEMENT DATA ────────────────────────────────────
 let unhcrLastFetch = 0;
 const UNHCR_FALLBACK = [
-  { country: 'Palestine', displaced: 5900000, note: 'Refugees + IDPs — 2024' },
-  { country: 'Syria',     displaced: 7200000, note: 'IDPs inside Syria — 2024' },
+  { country: 'Palestine', displaced: 6200000, note: 'Refugees + IDPs — 2025 est.' },
+  { country: 'Syria',     displaced: 7100000, note: 'IDPs inside Syria — 2025 est.' },
   { country: 'Yemen',     displaced: 4500000, note: 'IDPs — 2024' },
   { country: 'Lebanon',   displaced:  820000, note: 'Refugees + displaced — 2024' },
   { country: 'Iraq',      displaced: 1200000, note: 'IDPs — 2024' },
@@ -7322,7 +7326,7 @@ async function fetchUNHCR() {
   const footer = document.getElementById('unhcr-footer');
   if (!grid) return;
   try {
-    const url   = 'https://api.unhcr.org/population/v1/population/?limit=20&dataset=population&displayType=totals&countries=PSE,LBN,SYR,YEM,IRQ,AFG&yearFrom=2024&yearTo=2024';
+    const url   = 'https://data.unhcr.org/api/population/?limit=20&dataset=population&displayType=totals&countries=PSE,LBN,SYR,YEM,IRQ,AFG&yearFrom=2024&yearTo=2024';
     const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
     const res   = await fetch(proxy, { signal: AbortSignal.timeout(10000) });
     const wrap  = await res.json();
@@ -8330,8 +8334,8 @@ document.addEventListener('DOMContentLoaded', () => {
   renderOps();
   renderSIPRI();
   initACLED();
-  setTimeout(fetchUNHCR,     2000);
-  setTimeout(fetchRWReports, 6000);
+  setTimeout(fetchUNHCR,     500);
+  setTimeout(fetchRWReports, 1000);
   renderStatusCards();
   renderFigures();
 
@@ -8366,6 +8370,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Cycle countdown (visual — resets when AL JAZEERA anchor feed re-fetches)
   setInterval(updateCountdown, 1000);
+
+
+
+  // ── PERFORMANCE: Lazy-load below-fold sections ──
+  if ('IntersectionObserver' in window) {
+    const lazyObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.remove('lazy-hidden');
+          lazyObserver.unobserve(entry.target);
+        }
+      });
+    }, { rootMargin: '200px' });
+
+    document.querySelectorAll('.bf-section-body').forEach(el => {
+      el.classList.add('lazy-hidden');
+      lazyObserver.observe(el);
+    });
+  }
+
+  // ── PERFORMANCE: Defer non-critical API calls ──
+  // Use requestIdleCallback where available to avoid blocking initial render
+  const deferCall = window.requestIdleCallback || (fn => setTimeout(fn, 100));
 
   // Mobile sidebar toggles + bottom nav
   initMobileSidebars();
