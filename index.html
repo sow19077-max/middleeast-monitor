@@ -4575,6 +4575,7 @@ const PROXIES = [
   { type: 'rss2json',    base: 'https://api.rss2json.com/v1/api.json?rss_url='          },
   { type: 'codetabs',    base: 'https://api.codetabs.com/v1/proxy?quest='               },
   { type: 'feed2json',   base: 'https://www.toptal.com/developers/feed2json/convert?url=' },
+  { type: 'allorigins',  base: 'https://api.allorigins.win/raw?url='                    },
 ];
 
 const TIER1_CYCLE_MS = 2 * 60 * 1000;  // 2 minutes
@@ -5153,10 +5154,10 @@ function updateActiveFronts() {
 
 // ── SIMULATED SEED VALUES (shown immediately, replaced by live data when available) ──
 const STAT_SEEDS = {
-  deaths:     { base: 54200,  rate: [1, 4],   badge: 'ESTIMATED',    badgeClass: 'orange' },
-  injured:    { base: 128500, rate: [2, 7],   badge: 'ESTIMATED',    badgeClass: 'orange' },
-  displaced:  { base: 2300000,rate: [80,300], badge: 'ESTIMATED',    badgeClass: 'orange' },
-  children:   { base: 19800,  rate: [0, 2],   badge: 'ESTIMATED',    badgeClass: 'orange' },
+  deaths:     { base: 62400,  rate: [1, 4],   badge: 'ESTIMATED',    badgeClass: 'orange' },
+  injured:    { base: 148200, rate: [2, 7],   badge: 'ESTIMATED',    badgeClass: 'orange' },
+  displaced:  { base: 2600000,rate: [80,300], badge: 'ESTIMATED',    badgeClass: 'orange' },
+  children:   { base: 23500,  rate: [0, 2],   badge: 'ESTIMATED',    badgeClass: 'orange' },
   aidworkers: { base: 385,    rate: [0, 1],   badge: 'ESTIMATED',    badgeClass: 'orange' },
   fronts:     { base: 7,      rate: [0, 0],   badge: 'SIMULATED',    badgeClass: 'dim' },
 };
@@ -5211,7 +5212,7 @@ function initStats() {
   if (dateEl) dateEl.textContent = `AS OF ${String(now.getUTCDate()).padStart(2,'0')} ${STAT_MONTHS[now.getUTCMonth()]} ${now.getUTCFullYear()}`;
 
   // Seed simulated values immediately so numbers always show
-  setTimeout(seedStats, 400);
+  setTimeout(seedStats, 50);
 
   // Start live micro-ticker
   setTimeout(liveStatTicker, 2500);
@@ -5576,7 +5577,7 @@ const SANCTIONS_DATA = [
       { target: 'Iranian Oil Exports',             sub: 'OFAC energy sanctions; third-party ban',  issuers: ['us'],               date: 'Nov 2018',  status: 'active'   },
       { target: 'Central Bank of Iran',            sub: 'Financial system cut-off; SWIFT block',   issuers: ['us','eu'],          date: 'Feb 2012',  status: 'active'   },
       { target: 'Masoud Pezeshkian',               sub: 'President — listed under nuclear SDN',    issuers: ['us'],               date: 'Jul 2024',  status: 'active'   },
-      { target: 'Ali Khamenei',                    sub: 'Supreme Leader — personal asset freeze',  issuers: ['us','eu'],          date: 'Jun 2019',  status: 'active'   },
+      { target: 'Ali Khamenei (deceased)',                    sub: 'Supreme Leader — personal asset freeze',  issuers: ['us','eu'],          date: 'Jun 2019',  status: 'active'   },
       { target: 'JCPOA Sanctions Waiver',          sub: 'Partial nuclear-related relief (lapsed)',  issuers: ['us'],               date: 'May 2018',  status: 'lifted'   },
     ],
   },
@@ -6279,8 +6280,8 @@ const FIGURES = [
   },
   {
     name: 'Ali Khamenei',
-    role: 'Supreme Leader — Iran',
-    status: 'inpower',
+    role: 'Supreme Leader — Iran (deceased)',
+    status: 'eliminated',
     flag: '🇮🇷',
     img: 'https://upload.wikimedia.org/wikipedia/commons/e/e2/Ali_Khamenei_Nowruz_message_official_portrait_1397_02.jpg',
   },
@@ -8630,12 +8631,12 @@ let wbChart = null;
 async function fetchWorldBankMilitary() {
   const updEl = document.getElementById('wb-updated');
   const fallback = [
-    { country: 'ISRAEL',  code: 'IL', val: 5.3  },
-    { country: 'IRAN',    code: 'IR', val: 2.3  },
+    { country: 'ISRAEL',  code: 'IL', val: 5.6  },
+    { country: 'IRAN',    code: 'IR', val: 2.5  },
     { country: 'USA',     code: 'US', val: 3.5  },
-    { country: 'SAUDI',   code: 'SA', val: 6.0  },
-    { country: 'YEMEN',   code: 'YE', val: 4.1  },
-    { country: 'TURKEY',  code: 'TR', val: 1.8  },
+    { country: 'SAUDI',   code: 'SA', val: 6.2  },
+    { country: 'YEMEN',   code: 'YE', val: 4.3  },
+    { country: 'TURKEY',  code: 'TR', val: 1.9  },
   ];
   try {
     const codes = ['IL','IR','US','SA','YE','TR'].join(';');
