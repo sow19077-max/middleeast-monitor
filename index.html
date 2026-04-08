@@ -4559,21 +4559,17 @@ const TENSE_WORDS = [
 // ── TIER 1 — Wire Services (fetch every 2 min) ─────────────────
 // ── TIER 2 — Major International Broadcasters (fetch every 3 min)
 const FEEDS = [
-  // Tier 1 — Wire Services
-  { url: 'https://feeds.reuters.com/reuters/worldNews',            label: 'REUTERS WORLD', cls: 'reuters', tier: 1 },
-  { url: 'https://feeds.reuters.com/Reuters/worldNews',            label: 'REUTERS ME',    cls: 'reuters', tier: 1 },
-  { url: 'https://rsshub.app/apnews/topics/middle-east',           label: 'AP',            cls: 'ap',      tier: 1 },
-  { url: 'https://news.yahoo.com/rss/world',                       label: 'AFP',           cls: 'afp',     tier: 1 },
-  // Tier 2 — Major International Broadcasters
-  { url: 'https://feeds.bbci.co.uk/news/world/rss.xml',            label: 'BBC WORLD',     cls: 'bbc',     tier: 2 },
-  { url: 'https://feeds.bbci.co.uk/news/world/middle_east/rss.xml',label: 'BBC ME',        cls: 'bbc',     tier: 2 },
-  { url: 'https://www.aljazeera.com/xml/rss/all.xml',              label: 'AL JAZEERA',    cls: 'aljaz',   tier: 2 },
+  // Tier 1 — Wire Services & Major Wire Sources
+  { url: 'https://feeds.bbci.co.uk/news/world/rss.xml',            label: 'BBC WORLD',     cls: 'bbc',     tier: 1 },
+  { url: 'https://feeds.bbci.co.uk/news/world/middle_east/rss.xml',label: 'BBC ME',        cls: 'bbc',     tier: 1 },
+  { url: 'https://www.aljazeera.com/xml/rss/all.xml',              label: 'AL JAZEERA',    cls: 'aljaz',   tier: 1 },
+  { url: 'http://rss.cnn.com/rss/edition_world.rss',               label: 'CNN',           cls: 'cnn',     tier: 1 },
+  // Tier 2 — International Broadcasters
   { url: 'https://www.theguardian.com/world/rss',                  label: 'THE GUARDIAN',  cls: 'guardian',tier: 2 },
-  { url: 'http://rss.cnn.com/rss/edition_world.rss',               label: 'CNN',           cls: 'cnn',     tier: 2 },
   { url: 'https://rss.dw.com/rdf/rss-en-world',                   label: 'DW',            cls: 'dw',      tier: 2 },
   { url: 'https://www.france24.com/en/middle-east/rss',            label: 'FRANCE 24',     cls: 'france24',tier: 2 },
   { url: 'https://www.euronews.com/rss?level=theme&name=news',     label: 'EURONEWS',      cls: 'euronews',tier: 2 },
-  { url: 'https://www.trtworld.com/rss',                           label: 'TRT WORLD',     cls: 'trt',     tier: 2 },
+  { url: 'https://reliefweb.int/updates/rss.xml',                  label: 'RELIEFWEB',     cls: 'dw',      tier: 2 },
 ];
 
 // Proxies tried in order for each feed
@@ -4582,7 +4578,6 @@ const PROXIES = [
   { type: 'codetabs',    base: 'https://api.codetabs.com/v1/proxy?quest='               },
   { type: 'feed2json',   base: 'https://www.toptal.com/developers/feed2json/convert?url=' },
   { type: 'allorigins',  base: 'https://api.allorigins.win/raw?url='                    },
-  { type: 'corsproxy',   base: 'https://corsproxy.io/?'                                 },
 ];
 
 const TIER1_CYCLE_MS = 2 * 60 * 1000;  // 2 minutes
@@ -5048,14 +5043,12 @@ function extractAllNums(text, patterns) {
 
 async function refreshDeaths() {
   try {
-    const url = 'https://api.reliefweb.int/v1/reports?appname=monitor' +
-      '&filter[field]=country.iso3&filter[value][]=PSE&filter[value][]=LBN' +
-      '&filter[value][]=SYR&filter[value][]=YEM' +
-      '&limit=10&fields[include][]=body&fields[include][]=title&sort[]=date.created:desc';
-    const proxied = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-    const res  = await fetch(proxied, { signal: AbortSignal.timeout(15000) });
-    const wrap = await res.json();
-    const data = JSON.parse(wrap.contents)?.data || [];
+    // ReliefWeb v1 API decommissioned (410). Use RSS feed via rss2json as source.
+    const rwRssUrl = 'https://reliefweb.int/updates/rss.xml';
+    const rss2jsonUrl = 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(rwRssUrl);
+    const res  = await fetch(rss2jsonUrl, { signal: AbortSignal.timeout(15000) });
+    const json = await res.json();
+    const data = (json.items || []).map(item => ({ fields: { title: item.title || '', body: item.description || '' } }));
 
     const allNums = [];
     for (const r of data) {
@@ -5111,7 +5104,7 @@ function scanDeathsFromNews() {
 // ── DISPLACED: UNHCR API (every 6 hours) ──────────────────────
 async function refreshDisplaced() {
   try {
-    const url = 'https://data.unhcr.org/api/population/?limit=20&dataset=population&displayType=totals&countries=PSE,LBN,SYR,YEM,IRQ,AFG&yearFrom=2024&yearTo=2024';
+    const url = 'https://api.unhcr.org/population/v1/population/?limit=20&dataset=population&displayType=totals&countries=PSE,LBN,SYR,YEM,IRQ,AFG&yearFrom=2024&yearTo=2024';
     const res  = await fetch(url, { signal: AbortSignal.timeout(15000) });
     const json = await res.json();
 
@@ -7158,10 +7151,7 @@ function initBelowFold() {
 // ── SOURCE CREDIBILITY MAP ─────────────────────────────────────
 // Built dynamically from FEEDS so it always stays in sync
 const CREDIBILITY = {
-  'REUTERS WORLD': { tier: 1, label: 'Tier 1 — Reuters wire service', cls: 't1' },
-  'REUTERS ME':    { tier: 1, label: 'Tier 1 — Reuters Middle East wire', cls: 't1' },
-  'AP':            { tier: 1, label: 'Tier 1 — Associated Press wire service', cls: 't1' },
-  'AFP':           { tier: 1, label: 'Tier 1 — Agence France-Presse via Yahoo News', cls: 't1' },
+  'RELIEFWEB':     { tier: 1, label: 'Tier 1 — UN ReliefWeb Humanitarian Updates', cls: 't1' },
   'BBC WORLD':     { tier: 2, label: 'Tier 2 — BBC World Service', cls: 't2' },
   'BBC ME':        { tier: 2, label: 'Tier 2 — BBC Middle East', cls: 't2' },
   'AL JAZEERA':    { tier: 2, label: 'Tier 2 — Al Jazeera English', cls: 't2' },
@@ -7170,7 +7160,6 @@ const CREDIBILITY = {
   'DW':            { tier: 2, label: 'Tier 2 — Deutsche Welle World', cls: 't2' },
   'FRANCE 24':     { tier: 2, label: 'Tier 2 — France 24 Middle East', cls: 't2' },
   'EURONEWS':      { tier: 2, label: 'Tier 2 — Euronews World', cls: 't2' },
-  'TRT WORLD':     { tier: 2, label: 'Tier 2 — TRT World', cls: 't2' },
 };
 
 // ── HELPERS ────────────────────────────────────────────────────
@@ -7237,10 +7226,9 @@ async function fetchACLED() {
   if (!el || !ACLED_KEY) return;
   try {
     const url   = `https://api.acleddata.com/acled/read/?key=${ACLED_KEY}&iso=364,376,275,422,760,887,368,586,004&limit=50&fields=event_date,event_type,country,location,fatalities,notes&format=json`;
-    const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    const proxy = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`;
     const res   = await fetch(proxy, { signal: AbortSignal.timeout(12000) });
-    const wrap  = await res.json();
-    const data  = JSON.parse(wrap.contents);
+    const data  = await res.json();
     if (!data.data?.length) throw new Error('empty');
     acledLastFetch = Date.now();
     renderACLEDData(el, data.data, /*isStatic=*/false);
@@ -7326,11 +7314,9 @@ async function fetchUNHCR() {
   const footer = document.getElementById('unhcr-footer');
   if (!grid) return;
   try {
-    const url   = 'https://data.unhcr.org/api/population/?limit=20&dataset=population&displayType=totals&countries=PSE,LBN,SYR,YEM,IRQ,AFG&yearFrom=2024&yearTo=2024';
-    const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-    const res   = await fetch(proxy, { signal: AbortSignal.timeout(10000) });
-    const wrap  = await res.json();
-    const data  = JSON.parse(wrap.contents);
+    const url   = 'https://api.unhcr.org/population/v1/population/?limit=20&dataset=population&displayType=totals&countries=PSE,LBN,SYR,YEM,IRQ,AFG&yearFrom=2024&yearTo=2024';
+    const res   = await fetch(url, { signal: AbortSignal.timeout(12000) });
+    const data  = await res.json();
     const items = data.items || [];
     if (!items.length) throw new Error('empty');
     unhcrLastFetch = Date.now();
@@ -7370,24 +7356,22 @@ async function fetchRWReports() {
   const footer = document.getElementById('rwr-footer');
   if (!list) return;
   try {
-    const url   = 'https://api.reliefweb.int/v1/reports?appname=middleeastmonitor&filter[field]=country.iso3&filter[value][]=PSE&filter[value][]=LBN&filter[value][]=YEM&limit=10&fields[include][]=title&fields[include][]=date&fields[include][]=country&fields[include][]=url';
-    const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-    const res   = await fetch(proxy, { signal: AbortSignal.timeout(10000) });
-    const wrap  = await res.json();
-    const data  = JSON.parse(wrap.contents);
-    const rpts  = data.data || [];
+    // ReliefWeb API v1 decommissioned (410 Gone). Using RSS feed via rss2json.
+    const rwRssUrl = 'https://reliefweb.int/updates/rss.xml';
+    const rss2jsonUrl = 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(rwRssUrl);
+    const res   = await fetch(rss2jsonUrl, { signal: AbortSignal.timeout(10000) });
+    const json  = await res.json();
+    const rpts  = (json.items || []).slice(0, 10);
     if (!rpts.length) throw new Error('empty');
     rwReportsLastFetch = Date.now();
     list.innerHTML = rpts.map(r => {
-      const f      = r.fields || {};
-      const date   = f.date?.created
-        ? new Date(f.date.created).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+      const date   = r.pubDate
+        ? new Date(r.pubDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
         : '—';
-      const ctags  = (f.country || []).map(c => `<span class="rwr-country-tag">${c.iso3 || c.name || ''}</span>`).join('');
-      const url    = f.url || '#';
-      const title  = f.title || 'Untitled report';
+      const url    = r.link || '#';
+      const title  = r.title || 'Untitled report';
       return `<div class="rwr-card">
-        <div class="rwr-meta">${ctags}<span class="rwr-date">${date}</span></div>
+        <div class="rwr-meta"><span class="rwr-date">${date}</span></div>
         <div class="rwr-title"><a href="${url}" target="_blank" rel="noopener">${escapeHtml(title)}</a></div>
       </div>`;
     }).join('');
@@ -7837,19 +7821,42 @@ const COMM_SYMBOLS = [
 let commCache = {};
 
 async function fetchCommodities() {
+  // Stooq symbol mapping (Yahoo Finance returns 429 rate-limited)
+  const STOOQ_MAP = { 'BZ=F': 'bz.f', 'CL=F': 'cl.f', 'NG=F': 'ng.f', 'GC=F': 'gc.f' };
   for (const c of COMM_SYMBOLS) {
     try {
-      const url   = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(c.sym)}?interval=1d&range=2d`;
-      const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-      const res   = await fetch(proxy, { signal: AbortSignal.timeout(8000) });
-      const wrap  = await res.json();
-      const meta  = JSON.parse(wrap.contents)?.chart?.result?.[0]?.meta;
-      if (meta) {
-        const price = meta.regularMarketPrice;
-        const prev  = meta.chartPreviousClose || meta.previousClose || price;
-        commCache[c.sym] = { price, chg: ((price - prev) / prev) * 100 };
+      const stooqSym = STOOQ_MAP[c.sym] || c.sym.toLowerCase().replace('=', '.');
+      const stooqUrl = `https://stooq.com/q/l/?s=${stooqSym}&f=sd2t2ohlcv&h&e=csv`;
+      const proxy    = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(stooqUrl)}`;
+      const res      = await fetch(proxy, { signal: AbortSignal.timeout(8000) });
+      const csv      = await res.text();
+      const lines    = csv.trim().split('\n');
+      if (lines.length >= 2) {
+        const cols  = lines[1].split(',');
+        const open  = parseFloat(cols[3]);
+        const close = parseFloat(cols[6]);
+        if (!isNaN(close) && close > 0) {
+          const chg = open > 0 ? ((close - open) / open) * 100 : 0;
+          commCache[c.sym] = { price: close, chg };
+          continue;
+        }
       }
-    } catch (_) {}
+      throw new Error('Stooq parse failed');
+    } catch (_) {
+      // Fallback: try Yahoo Finance (may be rate-limited)
+      try {
+        const url   = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(c.sym)}?interval=1d&range=2d`;
+        const proxy2 = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`;
+        const res   = await fetch(proxy2, { signal: AbortSignal.timeout(8000) });
+        const data  = await res.json();
+        const meta  = data?.chart?.result?.[0]?.meta;
+        if (meta) {
+          const price = meta.regularMarketPrice;
+          const prev  = meta.chartPreviousClose || meta.previousClose || price;
+          commCache[c.sym] = { price, chg: ((price - prev) / prev) * 100 };
+        }
+      } catch (_) {}
+    }
   }
   renderCommodities();
   const upd = document.getElementById('comm-updated');
@@ -7989,10 +7996,8 @@ async function fetchAviationRadar() {
   try {
     // OpenSky public API – all flights, no auth needed
     const url = 'https://opensky-network.org/api/states/all?lamin=20&lomin=25&lamax=45&lomax=65';
-    const proxy = 'https://api.allorigins.win/get?url=' + encodeURIComponent(url);
-    const res  = await fetch(proxy);
-    const wrap = await res.json();
-    const data = JSON.parse(wrap.contents || '{}');
+    const res  = await fetch(url, { signal: AbortSignal.timeout(10000) });
+    const data = await res.json();
     const states = data.states || [];
     const count  = states.length;
     const norm   = Math.min(count / 600, 1);
@@ -8620,6 +8625,7 @@ async function fetchWorldBankMilitary() {
     const codes = ['IL','IR','US','SA','YE','TR'].join(';');
     const url   = `https://api.worldbank.org/v2/country/${codes}/indicator/MS.MIL.XPND.GD.ZS?format=json&mrv=1&per_page=20`;
     const res   = await fetch(url, { signal: AbortSignal.timeout(10000) });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     const data  = await res.json();
     const rows  = data?.[1] || [];
 
@@ -8744,10 +8750,8 @@ async function fetchOpenSkyMap() {
   if (!openskyVisible) return;
   try {
     const url   = 'https://opensky-network.org/api/states/all?lamin=20&lomin=25&lamax=45&lomax=65';
-    const proxy = 'https://api.allorigins.win/get?url=' + encodeURIComponent(url);
-    const res   = await fetch(proxy, { signal: AbortSignal.timeout(10000) });
-    const wrap  = await res.json();
-    const data  = JSON.parse(wrap.contents || '{}');
+    const res   = await fetch(url, { signal: AbortSignal.timeout(10000) });
+    const data  = await res.json();
     const states = (data.states || []).filter(s => s[5] != null && s[6] != null);
 
     if (openskyLayerGroup) openskyLayerGroup.clearLayers();
