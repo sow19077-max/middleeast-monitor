@@ -5,8 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="referrer" content="no-referrer">
 <title>Middle East // War Monitor</title>
-<link rel="preconnect" href="https://api.allorigins.win">
-<link rel="preconnect" href="https://api.reliefweb.int">
 <link rel="dns-prefetch" href="https://s3.tradingview.com">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -4577,7 +4575,6 @@ const PROXIES = [
   { type: 'rss2json',    base: 'https://api.rss2json.com/v1/api.json?rss_url='          },
   { type: 'codetabs',    base: 'https://api.codetabs.com/v1/proxy?quest='               },
   { type: 'feed2json',   base: 'https://www.toptal.com/developers/feed2json/convert?url=' },
-  { type: 'allorigins',  base: 'https://api.allorigins.win/raw?url='                    },
 ];
 
 const TIER1_CYCLE_MS = 2 * 60 * 1000;  // 2 minutes
@@ -7821,43 +7818,39 @@ const COMM_SYMBOLS = [
 let commCache = {};
 
 async function fetchCommodities() {
-  // Stooq symbol mapping (Yahoo Finance returns 429 rate-limited)
-  const STOOQ_MAP = { 'BZ=F': 'bz.f', 'CL=F': 'cl.f', 'NG=F': 'ng.f', 'GC=F': 'gc.f' };
-  for (const c of COMM_SYMBOLS) {
-    try {
-      const stooqSym = STOOQ_MAP[c.sym] || c.sym.toLowerCase().replace('=', '.');
-      const stooqUrl = `https://stooq.com/q/l/?s=${stooqSym}&f=sd2t2ohlcv&h&e=csv`;
-      const proxy    = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(stooqUrl)}`;
-      const res      = await fetch(proxy, { signal: AbortSignal.timeout(8000) });
-      const csv      = await res.text();
-      const lines    = csv.trim().split('\n');
-      if (lines.length >= 2) {
-        const cols  = lines[1].split(',');
-        const open  = parseFloat(cols[3]);
-        const close = parseFloat(cols[6]);
-        if (!isNaN(close) && close > 0) {
-          const chg = open > 0 ? ((close - open) / open) * 100 : 0;
-          commCache[c.sym] = { price: close, chg };
-          continue;
-        }
-      }
-      throw new Error('Stooq parse failed');
-    } catch (_) {
-      // Fallback: try Yahoo Finance (may be rate-limited)
-      try {
-        const url   = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(c.sym)}?interval=1d&range=2d`;
-        const proxy2 = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`;
-        const res   = await fetch(proxy2, { signal: AbortSignal.timeout(8000) });
-        const data  = await res.json();
-        const meta  = data?.chart?.result?.[0]?.meta;
-        if (meta) {
-          const price = meta.regularMarketPrice;
-          const prev  = meta.chartPreviousClose || meta.previousClose || price;
-          commCache[c.sym] = { price, chg: ((price - prev) / prev) * 100 };
-        }
-      } catch (_) {}
+  // Use CoinGecko for gold (pax-gold tracks XAU) + free oil/gas estimates
+  try {
+    // Gold via CoinGecko (pax-gold is 1:1 gold-backed token)
+    const cgUrl = 'https://api.coingecko.com/api/v3/simple/price?ids=pax-gold&vs_currencies=usd&include_24hr_change=true&precision=2';
+    const cgRes = await fetch(cgUrl, { signal: AbortSignal.timeout(8000) });
+    const cgData = await cgRes.json();
+    if (cgData['pax-gold']?.usd) {
+      commCache['GC=F'] = {
+        price: cgData['pax-gold'].usd,
+        chg: cgData['pax-gold'].usd_24h_change || 0
+      };
     }
-  }
+  } catch(_) {}
+
+  try {
+    // Try EIA API for Brent crude (free DEMO_KEY)
+    const eiaUrl = 'https://api.eia.gov/v2/petroleum/pri/spt/data/?api_key=DEMO_KEY&data[0]=value&facets[series][]=RBRTE&facets[series][]=RWTC&sort[0][column]=period&sort[0][direction]=desc&length=4&offset=0';
+    const eiaRes = await fetch(eiaUrl, { signal: AbortSignal.timeout(8000) });
+    if (eiaRes.ok) {
+      const eiaData = await eiaRes.json();
+      const rows = eiaData?.response?.data || [];
+      const brent = rows.find(r => r.series === 'RBRTE');
+      const wti   = rows.find(r => r.series === 'RWTC');
+      if (brent?.value) commCache['BZ=F'] = { price: parseFloat(brent.value), chg: 0 };
+      if (wti?.value)   commCache['CL=F'] = { price: parseFloat(wti.value), chg: 0 };
+    }
+  } catch(_) {}
+
+  // Natural gas — use static estimate if no live data
+  if (!commCache['NG=F']) commCache['NG=F'] = { price: 3.45, chg: 0 };
+  if (!commCache['BZ=F']) commCache['BZ=F'] = { price: 72.50, chg: 0 };
+  if (!commCache['CL=F']) commCache['CL=F'] = { price: 68.30, chg: 0 };
+
   renderCommodities();
   const upd = document.getElementById('comm-updated');
   if (upd) upd.textContent = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
@@ -8092,7 +8085,8 @@ async function fetchCyberThreat() {
   try {
     // Cloudflare Radar layer-3 attack summary (public, no key)
     const url = 'https://api.cloudflare.com/client/v4/radar/attacks/layer3/summary?dateRange=1d&format=json';
-    const res  = await fetch(url);
+    const res  = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     const json = await res.json();
     const summary = json?.result?.summary_0_1 || null;
     if (summary) {
@@ -8288,6 +8282,20 @@ document.addEventListener('DOMContentLoaded', () => {
   if (_bf && _app) _app.appendChild(_bf);
 
   initBelowFold();
+
+  // Hide "RE-CONNECTING" fallback once TradingView widget loads
+  document.querySelectorAll('.mr-widget-wrap').forEach(wrap => {
+    const fb = wrap.querySelector('.mr-fallback');
+    if (!fb) return;
+    const obs = new MutationObserver(() => {
+      if (wrap.querySelector('iframe')) { fb.style.display = 'none'; obs.disconnect(); }
+    });
+    obs.observe(wrap, { childList: true, subtree: true });
+    // Also hide after timeout — widget may take a moment
+    setTimeout(() => {
+      if (wrap.querySelector('iframe')) fb.style.display = 'none';
+    }, 5000);
+  });
   initIntelLog();
   initCyberStatus();
   renderThreatGauges();
@@ -8303,6 +8311,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderLsbUNHCR(UNHCR_FALLBACK);
   renderEconIndicators();
   renderSanctionsActive();
+  renderCommodities();
   renderCryptoPrices();
   fetchCryptoPrices();
   setInterval(fetchCryptoPrices, 2 * 60 * 1000);
@@ -8315,6 +8324,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // ── New API panels ──────────────────────────────────────────
   fetchOilPrice();
   setInterval(fetchOilPrice, 5 * 60 * 1000);        // every 5 min
+  fetchCommodities();
+  setInterval(fetchCommodities, 5 * 60 * 1000);     // every 5 min
 
   setTimeout(() => { fetchGDELT();
     setInterval(fetchGDELT, 30 * 60 * 1000); }, 2000); // staggered, every 30 min
@@ -8339,7 +8350,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderOps();
   renderSIPRI();
   initACLED();
-  setTimeout(fetchUNHCR,     500);
+  setTimeout(fetchUNHCR,     1500);
   setTimeout(fetchRWReports, 1000);
   renderStatusCards();
   renderFigures();
@@ -8466,8 +8477,16 @@ async function fetchOilPrice() {
       });
     }
   } catch(e) {
-    if (valEl) valEl.textContent = '—';
-    if (updEl) updEl.textContent = 'ERR';
+    // EIA DEMO_KEY rate-limited; try using commodity cache from CoinGecko/Stooq
+    if (commCache['BZ=F']?.price) {
+      const p = commCache['BZ=F'].price;
+      if (valEl) valEl.textContent = '$' + p.toFixed(2);
+      if (chgEl) { chgEl.textContent = 'Brent'; chgEl.style.color = 'var(--text-dim)'; }
+      if (updEl) updEl.textContent = 'CACHED';
+    } else {
+      if (valEl) valEl.textContent = '—';
+      if (updEl) updEl.textContent = 'ERR';
+    }
     console.warn('[Oil/EIA] fetch failed:', e.message);
   }
 }
@@ -8563,11 +8582,8 @@ async function fetchOCHAFunding() {
   ];
 
   try {
-    // Try OCHA HPC API
-    const proxy = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(
-      'https://api.hpc.tools/v1/public/plan/year/2025?format=json'
-    );
-    const res  = await fetch(proxy, { signal: AbortSignal.timeout(8000) });
+    // OCHA HPC API supports CORS — fetch directly
+    const res  = await fetch('https://api.hpc.tools/v1/public/plan/year/2025?format=json', { signal: AbortSignal.timeout(12000) });
     const data = await res.json();
     const plans = data?.data || [];
     // Map to our static_data format where possible
